@@ -200,13 +200,65 @@ SELECT pilotos.nombre_piloto, accidentes.descripcion_choque
 FROM pilotos
 JOIN accidentes ON pilotos.id_piloto = accidentes.id_piloto;
 
--- vista n2
-
-
 
 -- select de cada vista 
 
 select * from Vista_Accidentes;
+
+
+-- Dejo aca el script de las funciones por las dudas si no funciona o algun inconveniente ''
+
+
+-- Esta funcion toma tres parametros para obtener una suma total de puntos de los pilotos y te retorna en "puntos totales" el resultado
+
+CREATE DEFINER=`root`@`localhost` FUNCTION `SumarPuntos`(piloto1 INT, piloto2 INT, piloto3 INT) RETURNS int
+    NO SQL
+BEGIN
+    declare puntosTotales INT;
+    SET puntosTotales = 0;
+    SELECT SUM(puntos_campeonato) INTO puntosTotales
+    FROM Puntaje_pilotos 
+    where id_piloto = piloto1 OR id_piloto = piloto2 OR id_piloto = piloto3;
+    return puntosTotales;
+END
+
+
+-- Esta funcion toma el nombre de la escuderia seleccionada y al final te devuelve los puntos totales de la escuderia que se inserto 
+
+CREATE DEFINER=`root`@`localhost` FUNCTION `Total_puntos_campeonato`(nombre_escuderia varchar(255)) RETURNS int
+    NO SQL
+BEGIN
+
+	declare puntaje int (10);
+    
+    select sum(puntos_campeonato) into puntaje
+    from puntaje_pilotos
+    
+    inner join pilotos
+    on puntaje_pilotos.id_piloto = pilotos.id_piloto
+	inner join escuderias
+    on puntaje_pilotos.id_piloto = escuderias.id_piloto
+    where nombre_escuderia = escuderias.Marca_escuderia;
+    
+    
+    return puntaje;
+END
+
+
+-- stored procedure aca realice un insert en un procedure que inserta datos en la tabla puntaje pilotos
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `insertarDatos`(
+    id_piloto INT,
+    puntos_campeonato INT,
+    campeonatos_ganados VARCHAR(50),
+    vueltas_rapidas INT,
+    carreras_ganadas INT,
+    carreras_podio INT,
+    nombre_piloto VARCHAR(50)
+    )
+INSERT INTO Puntaje_pilotos (id_piloto, puntos_campeonato, campeonatos_ganados, vueltas_rapidas, carreras_ganadas, carreras_podio, Nombre_piloto)
+VALUES (id_piloto, puntos_campeonato, campeonatos_ganados, vueltas_rapidas, carreras_ganadas, carreras_podio, nombre_piloto)
+
 
 -- Dejo los select de cada tabla para ir comprobando que todo este bien hecho
 
