@@ -24,6 +24,7 @@ Nombre_piloto Varchar(50)
 
 -- tabla 3
 create table Puntaje_pilotos(
+id_puntos int primary key auto_increment,
 id_piloto int,
 puntos_campeonato int,
 campeonatos_ganados Varchar(50),
@@ -32,7 +33,7 @@ carreras_ganadas int,
 carreras_podio int,
 Nombre_piloto Varchar(50)
 );
-
+drop table Puntaje_pilotos;
 -- tabla 4
 create table Puntajes_escuderia(
 Id_escuderia int,
@@ -55,9 +56,54 @@ id_piloto int,
 id_escuderia int
 );
 
+-- tabla 7
+create table Accidentes_2(
+id_accidente int primary key,
+Id_pista int,
+id_piloto int,
+id_escuderia int
+);
+
+-- tabla 8
+
+CREATE TABLE registro_eliminaciones (
+    id INT NOT NULL AUTO_INCREMENT,
+    tabla VARCHAR(50) NOT NULL,
+    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario VARCHAR(50),
+    PRIMARY KEY (id)
+);
+
+-- tabla 9 
+
+create table Puntajes_pilotos2(
+id_piloto int,
+puntos_campeonato int,
+campeonatos_ganados Varchar(50),
+vueltas_rapidas int,
+carreras_ganadas int,
+carreras_podio int,
+Nombre_piloto Varchar(50)
+);
+
+-- tabla 10
+
+CREATE TABLE registro_eliminaciones2 (
+    id INT NOT NULL AUTO_INCREMENT,
+    tabla VARCHAR(50) NOT NULL,
+    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario VARCHAR(50),
+    PRIMARY KEY (id)
+);
+
 -- Altere la tabla accidentes para agregarle mas informacion
 
 ALTER TABLE Accidentes ADD Coste_choque INTEGER, ADD Descripcion_Choque VARCHAR(255);
+ALTER TABLE Accidentes ADD Fecha_registro VARCHAR(255);
+
+ALTER TABLE Accidentes_2 ADD Coste_choque INTEGER, ADD Descripcion_Choque VARCHAR(255);
+ALTER TABLE Accidentes_2 ADD Fecha_registro VARCHAR(255);
+
 
 -- Altero las tablas para agregar las Fk 
 
@@ -194,22 +240,14 @@ insert into accidentes (id_accidente,id_pista, id_piloto, id_escuderia, coste_ch
 
 drop view Vista_Accidentes;
 
--- vista n1
+-- vista La vista "Vista_Accidentes" muestra los nombres de los pilotos y la descripcion del choque.
 CREATE VIEW Vista_Accidentes AS
 SELECT pilotos.nombre_piloto, accidentes.descripcion_choque
 FROM pilotos
 JOIN accidentes ON pilotos.id_piloto = accidentes.id_piloto;
 
 
--- select de cada vista 
-
-select * from Vista_Accidentes;
-
-
--- Dejo aca el script de las funciones por las dudas si no funciona o algun inconveniente ''
-
-
--- Esta funcion toma tres parametros para obtener una suma total de puntos de los pilotos y te retorna en "puntos totales" el resultado
+-- Esta funcion toma tres parametros para obtener una suma total de puntos de los pilotos y te retorna en "puntos totales" el resultado, la funcion trabaja en la tabla puntaje_pilotos
 
 CREATE DEFINER=`root`@`localhost` FUNCTION `SumarPuntos`(piloto1 INT, piloto2 INT, piloto3 INT) RETURNS int
     NO SQL
@@ -240,7 +278,6 @@ BEGIN
     on puntaje_pilotos.id_piloto = escuderias.id_piloto
     where nombre_escuderia = escuderias.Marca_escuderia;
     
-    
     return puntaje;
 END
 
@@ -260,16 +297,26 @@ INSERT INTO Puntaje_pilotos (id_piloto, puntos_campeonato, campeonatos_ganados, 
 VALUES (id_piloto, puntos_campeonato, campeonatos_ganados, vueltas_rapidas, carreras_ganadas, carreras_podio, nombre_piloto)
 
 
--- Dejo los select de cada tabla para ir comprobando que todo este bien hecho
 
-select * from pilotos;
+-- script de creacion de triggers para la tabla de accidentes, el "tg_Accidentes" se activa despues de insertar datos en la tabla accidentes en una segunda tabla llamada accidentes_2
 
-select * from escuderias;
+create trigger tg_Accidentes AFTER INSERT ON Accidentes FOR EACH ROW INSERT INTO Accidentes_2 (id_accidente,id_pista, id_piloto, id_escuderia, coste_choque, Descripcion_choque, Fecha_registro) 
+values (new.id_accidente, new.id_pista, new.id_piloto, new.id_escuderia, new.coste_choque, new.Descripcion_choque,now());
 
-select * from puntaje_pilotos;
+-- script de trigger para registrar las eliminaciones en la tabla de accidentes, guardandolo en una tabla a parte guardando el usuario que realizo la eliminacion 
 
-select * from Puntajes_escuderia;
+create trigger registro_eliminacion after delete on Accidentes for each row insert into registro_eliminaciones (tabla, usuario) VALUES ('nombre_de_la_tabla', USER(), now());
 
-select * from pistas;
 
-select * from accidentes;
+
+-- script trigger para la tabla puntaje_pilotos, para llevar un registro de los puntos, vueltar rapidas, etc que van ganando los pilotos a lo largo del campeonato 
+
+create trigger tg_puntaje_piloto AFTER update ON puntaje_pilotos FOR EACH ROW INSERT INTO puntajes_pilotos2 (id_piloto, puntos_campeonato, campeonatos_ganados, vueltas_rapidas, carreras_ganadas, carreras_podio, Nombre_piloto)
+ values (new.id_piloto, new.puntos_campeonato, new.campeonatos_ganados, new.vueltas_rapidas, new.carreras_ganadas, new.carreras_podio, new.Nombre_piloto);
+
+-- script trigger para la tabla puntaje_pilotos, para llevar un registro de eliminaciones
+
+create trigger registro_eliminacion2 before delete on puntaje_pilotos for each row insert into registro_eliminaciones (tabla, usuario) VALUES ('nombre_de_la_tabla', USER(), now());
+
+
+
