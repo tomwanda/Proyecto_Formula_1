@@ -96,6 +96,14 @@ CREATE TABLE registro_eliminaciones2 (
     PRIMARY KEY (id)
 );
 
+-- tabla 11 
+create table puntaje_carrera(
+id_piloto int,
+id_pista int,
+id_carrera int auto_increment primary key,
+puntos_ganados int
+);
+
 -- Altere la tabla accidentes para agregarle mas informacion
 
 ALTER TABLE Accidentes ADD Coste_choque INTEGER, ADD Descripcion_Choque VARCHAR(255);
@@ -318,5 +326,32 @@ create trigger tg_puntaje_piloto AFTER update ON puntaje_pilotos FOR EACH ROW IN
 
 create trigger registro_eliminacion2 before delete on puntaje_pilotos for each row insert into registro_eliminaciones (tabla, usuario) VALUES ('nombre_de_la_tabla', USER(), now());
 
+-- script primera tabla utilizacion de Rollback y Commit 
+
+start transaction;
+
+insert into accidentes (id_accidente,id_pista, id_piloto, id_escuderia, coste_choque, Descripcion_choque) values (4,8,4,15,500.000,'Hamilton choco intentando rebasar a Checo');
+insert into accidentes (id_accidente,id_pista, id_piloto, id_escuderia, coste_choque, Descripcion_choque) values (5,4,5,14,253.000,'Carlos se le fue el auto de cola y choco contra la pared rompiendo la suspencion delantera ');
+insert into accidentes (id_accidente,id_pista, id_piloto, id_escuderia, coste_choque, Descripcion_choque) values (6,4,6,6,128.000,'Stroll gira muy cerrada una curva y no llega a frenar, rompe una rueda');
+
+rollback;
+
+commit;
+
+-- script segunda talba utilizando el savepoint 
+
+start transaction;
+
+insert into puntaje_carrera ( id_piloto, id_pista, puntos_ganados) values (1,3,25);
+insert into puntaje_carrera ( id_piloto, id_pista, puntos_ganados) values (2,3,20);
+insert into puntaje_carrera ( id_piloto, id_pista, puntos_ganados) values (4,3,18);
+insert into puntaje_carrera ( id_piloto, id_pista, puntos_ganados) values (6,3,13);
+savepoint Guardado_N1; -- primeros 4# registros 
+-- release savepoint Guardado_N1;
+insert into puntaje_carrera ( id_piloto, id_pista, puntos_ganados) values (5,3,9);
+insert into puntaje_carrera ( id_piloto, id_pista, puntos_ganados) values (3,3,7);
+insert into puntaje_carrera ( id_piloto, id_pista, puntos_ganados) values (8,3,5);
+insert into puntaje_carrera ( id_piloto, id_pista, puntos_ganados) values (11,3,3);
+savepoint Guardado_N2; -- segundos 8# registros 
 
 
